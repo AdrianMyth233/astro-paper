@@ -1,14 +1,14 @@
-import { defineConfig, envField, fontProviders } from "astro/config";
+import { defineConfig } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from "@astrojs/sitemap";
-import remarkToc from "remark-toc";
-import remarkCollapse from "remark-collapse";
+import photosuite from "photosuite";
 import {
   transformerNotationDiff,
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/transformers/fileName";
+import remarkExternalLinks from "./src/utils/remarkExternalLinks";
 import { SITE } from "./src/config";
 
 // https://astro.build/config
@@ -18,9 +18,15 @@ export default defineConfig({
     sitemap({
       filter: page => SITE.showArchives || !page.endsWith("/archives"),
     }),
+    photosuite({
+      scope: "#article",
+      fancybox: true,
+      imageGrid: true,
+      exif: true,
+    }),
   ],
   markdown: {
-    remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
+    remarkPlugins: [remarkExternalLinks],
     shikiConfig: {
       // For more themes, visit https://shiki.style/themes
       themes: { light: "min-light", dark: "night-owl" },
@@ -43,31 +49,16 @@ export default defineConfig({
     optimizeDeps: {
       exclude: ["@resvg/resvg-js"],
     },
+    server: {
+      watch: {
+        // Watch the posts/ directory (outside src/) so dev server hot-reloads
+        // when markdown files are added, edited, or deleted.
+        ignored: ["!**/posts/**"],
+      },
+    },
   },
   image: {
     responsiveStyles: true,
     layout: "constrained",
-  },
-  env: {
-    schema: {
-      PUBLIC_GOOGLE_SITE_VERIFICATION: envField.string({
-        access: "public",
-        context: "client",
-        optional: true,
-      }),
-    },
-  },
-  experimental: {
-    preserveScriptOrder: true,
-    fonts: [
-      {
-        name: "Google Sans Code",
-        cssVariable: "--font-google-sans-code",
-        provider: fontProviders.google(),
-        fallbacks: ["monospace"],
-        weights: [300, 400, 500, 600, 700],
-        styles: ["normal", "italic"],
-      },
-    ],
   },
 });

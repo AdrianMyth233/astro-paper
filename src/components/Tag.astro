@@ -5,9 +5,10 @@ type Props = {
   tag: string;
   tagName: string;
   size?: "sm" | "lg";
+  count?: number;
 };
 
-const { tag, tagName, size = "lg" } = Astro.props;
+const { tag, tagName, size = "lg", count } = Astro.props;
 ---
 
 <li>
@@ -30,6 +31,10 @@ const { tag, tagName, size = "lg" } = Astro.props;
         { "size-4": size === "sm" },
       ]}
     />
-    {tagName}
+    {tagName}{
+      count !== undefined && (
+        <span class="ms-0.5 text-xs opacity-50">({count})</span>
+      )
+    }
   </a>
 </li>

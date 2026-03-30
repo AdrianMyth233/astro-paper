@@ -1,0 +1,55 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import getSortedPosts from "@/utils/getSortedPosts";
+import { SITE } from "@/config";
+import { t } from "@/i18n/ui";
+
+const posts = await getCollection("blog", ({ data }) => !data.draft);
+const sortedPosts = getSortedPosts(posts);
+
+const INITIAL_COUNT = 10;
+const hasMore = sortedPosts.length > INITIAL_COUNT;
+---
+
+<Layout title={`${t("posts.title")} | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout py-10">
+    {
+      sortedPosts.length === 0 ? (
+        <p class="py-12 text-center opacity-50" data-i18n="posts.empty">
+          {t("posts.empty")}
+        </p>
+      ) : (
+        <>
+          <ul id="posts-list">
+            {sortedPosts.map((data, index) => (
+              <li
+                class:list={["post-item", index >= INITIAL_COUNT && "hidden"]}
+              >
+                <Card {...data} />
+              </li>
+            ))}
+          </ul>
+          {hasMore && <div id="load-sentinel" class="h-8" />}
+          {hasMore && (
+            <p
+              id="no-more-hint"
+              class="hidden py-4 text-center text-sm opacity-50"
+            >
+              <span data-i18n="common.no_more">{t("common.no_more")}</span>
+            </p>
+          )}
+        </>
+      )
+    }
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  import "@/scripts/lazyLoad";
+</script>

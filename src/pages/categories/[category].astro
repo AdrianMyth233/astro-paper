@@ -1,0 +1,111 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import BackToTopButton from "@/components/BackToTopButton.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import { getCategory, getCategoryLabel } from "@/utils/getCategory";
+import getSortedPosts from "@/utils/getSortedPosts";
+import { t } from "@/i18n/ui";
+import { SITE } from "@/config";
+import IconChevronLeft from "@/assets/icons/IconChevronLeft.svg";
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection("blog", ({ data }) => !data.draft);
+  const sortedPosts = getSortedPosts(posts);
+
+  const categorySet = new Set<string>();
+  sortedPosts.forEach(p => {
+    const cat = getCategory(p.id);
+    if (cat) categorySet.add(cat);
+  });
+
+  return [...categorySet].map(category => ({
+    params: { category },
+    props: {
+      posts: sortedPosts.filter(p => getCategory(p.id) === category),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { category } = Astro.params;
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { posts } = Astro.props as Props;
+const label = getCategoryLabel(category);
+
+const INITIAL_COUNT = 10;
+const hasMore = posts.length > INITIAL_COUNT;
+---
+
+<Layout title={`${label} | ${t("categories.title")} | ${SITE.title}`}>
+  <Header />
+  <main
+    id="main-content"
+    data-backurl={`/categories/${category}`}
+    class="app-layout pt-10 pb-8"
+  >
+    <div class="my-6 flex items-center gap-3">
+      <LinkButton
+        href="/categories"
+        class="focus-outline flex items-center gap-1 text-sm opacity-70 hover:opacity-100"
+        title={t("categories.back")}
+        data-i18n-attr="title:categories.back"
+      >
+        <IconChevronLeft class="inline-block size-4" />
+        <span data-i18n="categories.back">{t("categories.back")}</span>
+      </LinkButton>
+    </div>
+    <h1
+      class="mb-2 text-2xl font-semibold sm:text-3xl"
+      data-i18n-cat={category}
+    >
+      {label}
+    </h1>
+    <p class="mb-8 opacity-60">
+      {posts.length}
+      <span data-i18n="categories.posts_count"
+        >{t("categories.posts_count")}</span
+      >
+    </p>
+    <ul id="posts-list">
+      {
+        posts.length === 0 ? (
+          <p class="py-12 text-center opacity-50" data-i18n="posts.empty">
+            {t("posts.empty")}
+          </p>
+        ) : (
+          posts.map((data, index) => (
+            <li class:list={["post-item", index >= INITIAL_COUNT && "hidden"]}>
+              <Card variant="h2" {...data} />
+            </li>
+          ))
+        )
+      }
+    </ul>
+    {hasMore && <div id="load-sentinel" class="h-8" />}
+    {
+      hasMore && (
+        <p id="no-more-hint" class="hidden py-4 text-center text-sm opacity-50">
+          <span data-i18n="common.no_more">{t("common.no_more")}</span>
+        </p>
+      )
+    }
+  </main>
+  <BackToTopButton />
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const main = document.querySelector<HTMLElement>("#main-content");
+    const backUrl = main?.dataset?.backurl;
+    if (backUrl) sessionStorage.setItem("backUrl", backUrl);
+  });
+</script>
+
+<script>
+  import "@/scripts/lazyLoad";
+</script>

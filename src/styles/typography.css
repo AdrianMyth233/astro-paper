@@ -39,6 +39,10 @@
       @apply marker:text-accent;
     }
 
+    p {
+      line-height: 1.85; /* Looser for CJK readability */
+    }
+
     hr {
       @apply border-border;
     }
@@ -52,6 +56,8 @@
     }
 
     table {
+      @apply block overflow-x-auto;
+
       th,
       td {
         @apply border border-border p-2;
@@ -93,27 +99,47 @@
 
   /* ===== Code Blocks & Syntax Highlighting ===== */
   .astro-code {
-    @apply flex border bg-(--shiki-light-bg) text-(--shiki-light) outline-border [&_span]:text-(--shiki-light);
+    @apply flex overflow-x-auto border border-border/60 bg-(--shiki-light-bg) text-(--shiki-light) shadow-sm [&_span]:text-(--shiki-light);
+    /* Improve contrast for light theme */
+    --shiki-light-bg: #fafafa;
   }
 
   html[data-theme="dark"] .astro-code {
-    @apply bg-(--shiki-dark-bg) text-(--shiki-dark) [&_span]:text-(--shiki-dark);
+    @apply border-border/40 bg-(--shiki-dark-bg) text-(--shiki-dark) [&_span]:text-(--shiki-dark);
+    /* Slightly lighter background for better contrast against page bg (#212737) */
+    --shiki-dark-bg: #1a1f2e;
   }
 
   /* Styles for Shiki transformers */
   /* https://shiki.style/packages/transformers */
   .astro-code {
     .line.diff.add {
-      @apply relative inline-block w-full bg-green-400/20 before:absolute before:-left-3 before:text-green-500 before:content-['+'];
+      @apply relative inline-block w-full bg-green-500/15 before:absolute before:-left-3 before:text-green-600 before:content-['+'];
     }
     .line.diff.remove {
-      @apply relative inline-block w-full bg-red-500/20 before:absolute before:-left-3 before:text-red-500 before:content-['-'];
+      @apply relative inline-block w-full bg-red-500/15 before:absolute before:-left-3 before:text-red-600 before:content-['-'];
     }
     .line.highlighted {
-      @apply inline-block w-full bg-slate-400/20;
+      @apply inline-block w-full bg-sky-500/10;
     }
     .highlighted-word {
-      @apply rounded-sm border border-border px-0.5 py-px;
+      @apply rounded-sm border border-border/60 bg-muted/50 px-0.5 py-px;
+    }
+  }
+
+  /* Dark mode adjustments for better contrast */
+  html[data-theme="dark"] .astro-code {
+    .line.diff.add {
+      @apply bg-green-400/20 before:text-green-400;
+    }
+    .line.diff.remove {
+      @apply bg-red-400/20 before:text-red-400;
+    }
+    .line.highlighted {
+      @apply bg-sky-400/15;
+    }
+    .highlighted-word {
+      @apply border-border/50 bg-muted/70;
     }
   }
 }

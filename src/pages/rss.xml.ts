@@ -11,11 +11,14 @@ export async function GET() {
     title: SITE.title,
     description: SITE.desc,
     site: SITE.website,
+    // Point browsers at our XSLT stylesheet so rss.xml renders as a readable page
+    stylesheet: "/rss-style.xsl",
     items: sortedPosts.map(({ data, id, filePath }) => ({
       link: getPath(id, filePath),
       title: data.title,
       description: data.description,
       pubDate: new Date(data.modDatetime ?? data.pubDatetime),
     })),
+    customData: `<language>zh-cn</language>`,
   });
 }

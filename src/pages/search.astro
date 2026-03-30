@@ -1,19 +1,17 @@
 ---
 import "@pagefind/default-ui/css/ui.css";
-import Main from "@/layouts/Main.astro";
 import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import { SITE } from "@/config";
-
-const backUrl = SITE.showBackButton ? `${Astro.url.pathname}` : "/";
+import { t } from "@/i18n/ui";
 ---
 
-<Layout title={`Search | ${SITE.title}`}>
+<Layout title={`${t("search.title")} | ${SITE.title}`}>
   <Header />
-  <Main pageTitle="Search" pageDesc="Search any article ...">
-    <div id="pagefind-search" transition:persist data-backurl={backUrl}></div>
-  </Main>
+  <main id="main-content" class="app-layout py-10">
+    <div id="pagefind-search" transition:persist class="mx-auto w-full"></div>
+  </main>
   <Footer />
 </Layout>
 
@@ -32,39 +30,35 @@ const backUrl = SITE.showBackButton ? `${Astro.url.pathname}` : "/";
       // @ts-expect-error — Missing types for @pagefind/default-ui package.
       const { PagefindUI } = await import("@pagefind/default-ui");
 
-      // Display warning inn dev mode
+      // Display warning in dev mode
       if (import.meta.env.DEV) {
-        pageFindSearch.innerHTML = `
-            <div class="bg-muted/75 rounded p-4 space-y-4 mb-4">
-              <p><strong>DEV mode Warning! </strong>You need to build the project at least once to see the search results during development.</p>
-              <code class="block bg-black text-white px-2 py-1 rounded">pnpm run build</code>
-            </div>
-          `;
+        const warn = document.createElement("div");
+        warn.className = "mb-4 rounded bg-muted/75 p-4 text-sm space-y-2";
+        warn.innerHTML = `<p><strong>开发模式提示：</strong>需要先构建项目才能看到搜索结果。</p><code class="block bg-black text-white px-2 py-1 rounded">pnpm run build</code>`;
+        pageFindSearch.prepend(warn);
       }
 
-      // Init pagefind ui
       const search = new PagefindUI({
         element: "#pagefind-search",
         showImages: false,
         showSubResults: true,
+        sort: { date: "desc" },
         processTerm: function (term: string) {
-          params.set("q", term); // Update the `q` parameter in the URL
-          history.replaceState(history.state, "", "?" + params.toString()); // Push the new URL without reloading
-
-          const backUrl = pageFindSearch?.dataset?.backurl;
-          sessionStorage.setItem("backUrl", backUrl + "?" + params.toString());
-
+          params.set("q", term);
+          history.replaceState(history.state, "", "?" + params.toString());
+          sessionStorage.setItem(
+            "backUrl",
+            window.location.pathname + "?" + params.toString()
+          );
           return term;
         },
       });
 
-      // If search param exists (eg: search?q=astro), trigger search
       const query = params.get("q");
       if (query) {
         search.triggerSearch(query);
       }
 
-      // Reset search param if search input is cleared
       const searchInput = document.querySelector(".pagefind-ui__search-input");
       const clearButton = document.querySelector(".pagefind-ui__search-clear");
       searchInput?.addEventListener("input", resetSearchParam);
@@ -80,10 +74,7 @@ const backUrl = SITE.showBackButton ? `${Astro.url.pathname}` : "/";
 
   document.addEventListener("astro:after-swap", () => {
     const pagefindSearch = document.querySelector("#pagefind-search");
-
-    // if pagefind search form already exists, don't initialize search component
     if (pagefindSearch && pagefindSearch.querySelector("form")) return;
-
     initSearch();
   });
   initSearch();

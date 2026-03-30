@@ -1,0 +1,56 @@
+---
+import { getCollection } from "astro:content";
+import Main from "@/layouts/Main.astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import getUniqueTags from "@/utils/getUniqueTags";
+import getPostsByTag from "@/utils/getPostsByTag";
+import { SITE } from "@/config";
+import { t } from "@/i18n/ui";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("blog");
+  const tags = getUniqueTags(posts);
+
+  return tags.map(({ tag, tagName }) => ({
+    params: { tag },
+    props: { tagName, posts: getPostsByTag(posts, tag) },
+  }));
+}
+
+const { tag } = Astro.params;
+const { tagName, posts } = Astro.props;
+
+const INITIAL_COUNT = 10;
+const hasMore = posts.length > INITIAL_COUNT;
+---
+
+<Layout title={`${t("nav.tags")}：${tagName} | ${SITE.title}`}>
+  <Header />
+  <Main pageTitle={[`${t("nav.tags")}：`, `${tagName}`]} titleTransition={tag}>
+    <ul id="posts-list">
+      {
+        posts.map((data, index) => (
+          <li class:list={["post-item", index >= INITIAL_COUNT && "hidden"]}>
+            <Card {...data} />
+          </li>
+        ))
+      }
+    </ul>
+    {hasMore && <div id="load-sentinel" class="h-8" />}
+    {
+      hasMore && (
+        <p id="no-more-hint" class="hidden py-4 text-center text-sm opacity-50">
+          <span data-i18n="common.no_more">{t("common.no_more")}</span>
+        </p>
+      )
+    }
+  </Main>
+  <Footer />
+</Layout>
+
+<script>
+  import "@/scripts/lazyLoad";
+</script>

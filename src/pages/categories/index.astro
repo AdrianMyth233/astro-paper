@@ -1,0 +1,75 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import BackToTopButton from "@/components/BackToTopButton.astro";
+import { getCategory, getCategoryLabel } from "@/utils/getCategory";
+import getSortedPosts from "@/utils/getSortedPosts";
+import { t } from "@/i18n/ui";
+import { SITE } from "@/config";
+import { CATEGORIES } from "@/constants";
+
+const posts = await getCollection("blog", ({ data }) => !data.draft);
+const sortedPosts = getSortedPosts(posts);
+
+// Count posts per category slug
+const countMap = new Map<string, number>();
+for (const post of sortedPosts) {
+  const cat = getCategory(post.id);
+  if (cat) countMap.set(cat, (countMap.get(cat) ?? 0) + 1);
+}
+
+// All configured categories in declared order, with post count (0 if none yet)
+const categories = CATEGORIES.map(c => ({
+  slug: c.slug,
+  label: getCategoryLabel(c.slug),
+  count: countMap.get(c.slug) ?? 0,
+}));
+---
+
+<Layout title={`${t("categories.title")} | ${SITE.title}`}>
+  <Header />
+  <main id="main-content" class="app-layout py-10">
+    <ul class="grid gap-4 sm:grid-cols-2">
+      {
+        categories.map(({ slug, label, count }) =>
+          count > 0 ? (
+            <li>
+              <a
+                href={`/categories/${slug}`}
+                class="group flex items-center justify-between rounded-lg border border-border px-5 py-4 transition-colors hover:border-accent hover:text-accent"
+              >
+                <span class="text-lg font-medium" data-i18n-cat={slug}>
+                  {label}
+                </span>
+                <span class="text-sm opacity-60">
+                  {count}{" "}
+                  <span data-i18n="categories.posts_count">
+                    {t("categories.posts_count")}
+                  </span>
+                </span>
+              </a>
+            </li>
+          ) : (
+            <li>
+              <div class="flex cursor-default items-center justify-between rounded-lg border border-border px-5 py-4 opacity-35">
+                <span class="text-lg font-medium" data-i18n-cat={slug}>
+                  {label}
+                </span>
+                <span class="text-sm">
+                  0{" "}
+                  <span data-i18n="categories.posts_count">
+                    {t("categories.posts_count")}
+                  </span>
+                </span>
+              </div>
+            </li>
+          )
+        )
+      }
+    </ul>
+  </main>
+  <BackToTopButton />
+  <Footer />
+</Layout>

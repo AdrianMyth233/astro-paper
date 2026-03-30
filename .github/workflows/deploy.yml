@@ -1,0 +1,46 @@
+name: Deploy Astro to Server
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches: ["dev"]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "☁️ Checkout code"
+        uses: actions/checkout@v6
+
+      - name: "📦 Setup pnpm"
+        uses: pnpm/action-setup/@v5
+        with:
+          version: latest
+
+      - name: "⚡ Setup Node.js"
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: "📦 Install dependencies"
+        run: pnpm install
+
+      - name: "🚀 Build Astro"
+        run: pnpm run build
+
+      - name: "📂 Deploy to server"
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          SOURCE: "dist/"
+          TARGET: ${{ secrets.REMOTE_TARGET }}
+          ARGS: "-rltgoDzvO --delete"

@@ -1,16 +1,14 @@
 ---
-import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
-import { PUBLIC_GOOGLE_SITE_VERIFICATION } from "astro:env/client";
 import { SITE } from "@/config";
 import "@/styles/global.css";
+import "photosuite/dist/photosuite.css";
 
 type Props = {
   title?: string;
   author?: string;
   profile?: string;
   description?: string;
-  ogImage?: string;
   canonicalURL?: string;
   pubDatetime?: Date;
   modDatetime?: Date | null;
@@ -22,20 +20,16 @@ const {
   author = SITE.author,
   profile = SITE.profile,
   description = SITE.desc,
-  ogImage = SITE.ogImage ? `/${SITE.ogImage}` : "/og.png",
   canonicalURL = new URL(Astro.url.pathname, Astro.url),
   pubDatetime,
   modDatetime,
   scrollSmooth = false,
 } = Astro.props;
 
-const socialImageURL = new URL(ogImage, Astro.url);
-
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   headline: `${title}`,
-  image: `${socialImageURL}`,
   datePublished: `${pubDatetime?.toISOString()}`,
   ...(modDatetime && { dateModified: modDatetime.toISOString() }),
   author: [
@@ -50,22 +44,15 @@ const structuredData = {
 
 <!doctype html>
 <html
-  dir={SITE.dir}
   lang=`${SITE.lang ?? "en"}`
   class={`${scrollSmooth && "scroll-smooth"}`}
 >
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="canonical" href={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
-
-    <!-- Load Font -->
-    <Font
-      cssVariable="--font-google-sans-code"
-      preload={[{ subset: "latin", weight: 400, style: "normal" }]}
-    />
 
     <!-- General Meta Tags -->
     <title>{title}</title>
@@ -78,7 +65,6 @@ const structuredData = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:image" content={socialImageURL} />
 
     <!-- Article Published/Modified time -->
     {
@@ -98,13 +84,6 @@ const structuredData = {
       )
     }
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content={socialImageURL} />
-
     <!-- Google JSON-LD Structured data -->
     <script
       type="application/ld+json"
@@ -122,18 +101,6 @@ const structuredData = {
     />
 
     <meta name="theme-color" content="" />
-
-    {
-      // If PUBLIC_GOOGLE_SITE_VERIFICATION is set in the environment variable,
-      // include google-site-verification tag in the heading
-      // Learn more: https://support.google.com/webmasters/answer/9008080#meta_tag_verification&zippy=%2Chtml-tag
-      PUBLIC_GOOGLE_SITE_VERIFICATION && (
-        <meta
-          name="google-site-verification"
-          content={PUBLIC_GOOGLE_SITE_VERIFICATION}
-        />
-      )
-    }
 
     <ClientRouter />
 
@@ -169,6 +136,24 @@ const structuredData = {
   </head>
   <body>
     <slot />
+
+    <!-- Suppress CSS transitions during view-transition DOM swaps -->
+    <script>
+      document.addEventListener("astro:before-swap", () => {
+        document.documentElement.classList.add("no-transitions");
+      });
+      document.addEventListener("astro:after-swap", () => {
+        // Two rAF frames: let browser paint with correct theme before re-enabling transitions
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.documentElement.classList.remove("no-transitions");
+          });
+        });
+      });
+    </script>
+
+    <!-- Load i18n runtime -->
+    <script src="../scripts/i18n.ts"></script>
 
     <!-- Load full theme logic -->
     <script src="../scripts/theme.ts"></script>
